@@ -2,27 +2,32 @@ package org.flameout.bots.tcp
 
 import org.flameout.bots.APIConfiguration
 import org.json.JSONObject
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.PrintWriter
 import java.net.Socket
-import java.util.logging.Logger
+import javax.annotation.PostConstruct
 
 @Component
 open class TCPChannel(){
-    private val logger = Logger.getLogger("TCPChannel")
-    private val MY_GAME_SLOT : Int
-    private val reader : BufferedReader
-    private val writer : PrintWriter
-    private val socket : Socket
-    private val token : String
+    private val logger = LoggerFactory.getLogger("TCPChannel")
+    private var MY_GAME_SLOT = -1
+    private lateinit var reader : BufferedReader
+    private lateinit var writer : PrintWriter
+    private lateinit var socket : Socket
+    private lateinit var token : String
 
     @Autowired
     private lateinit var configuration : APIConfiguration
 
-    init{
+    @Autowired
+    private lateinit var messageProcessor : MessageProcessor
+
+    @PostConstruct
+    private fun setup(){
         val host = readConfigEntry("Host")
         val port = readConfigEntry("Port").toInt()
         token = readConfigEntry("Token")
@@ -41,7 +46,7 @@ open class TCPChannel(){
         return try{
             configuration.data[key]!!
         }catch(ex : Exception){
-            logger.severe("key not configured")
+            logger.error("$key not configured")
             shutdown()
             throw Exception("I wanna make the compiler happy")
         }    }
@@ -49,7 +54,8 @@ open class TCPChannel(){
     private fun listen(){
         while(true){
             val line = reader.readLine() ?: break
-            logger.fine("Incoming message: $line")
+            logger.debug("Incoming message: $line")
+            messageProcessor.process(line)
         }
         logger.info("Got null line from reader")
         shutdown()
@@ -67,9 +73,11 @@ open class TCPChannel(){
             if(jsonified.getString("response") != "ok"){
                 throw Exception("Response code not 'ok'")
             }
-            return jsonified.getInt("identified")
+            val slotId = jsonified.getInt("identified")
+            logger.info("Authenticated for slot $slotId")
+            return slotId
         }catch(ex : Exception){
-            logger.severe("Server authentication failed, exiting. $ex")
+            logger.error("Server authentication failed, exiting. $ex")
             ex.printStackTrace()
             shutdown()
             return -1   //Irrelevant but makes the compiler happy!
@@ -81,16 +89,18 @@ open class TCPChannel(){
     }
 
     private fun send(message : String){
-        logger.fine("Sending message: $message")
+        logger.debug("Sending message: $message")
         writer.write("$message\n")
         writer.flush()
     }
 
     private fun shutdown(){
         logger.info("Shutting down")
-        reader.close()
-        writer.close()
-        socket.close()
+        try {
+            reader.close()
+            writer.close()
+            socket.close()
+        }catch(ex : Exception){}
         System.exit(0)
     }
 }
