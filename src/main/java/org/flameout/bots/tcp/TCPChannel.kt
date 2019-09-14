@@ -26,6 +26,8 @@ open class TCPChannel(){
     @Autowired
     private lateinit var messageProcessor : MessageProcessor
 
+
+
     @PostConstruct
     private fun setup(){
         val host = readConfigEntry("Host")
@@ -55,7 +57,13 @@ open class TCPChannel(){
         while(true){
             val line = reader.readLine() ?: break
             logger.debug("Incoming message: $line")
-            messageProcessor.process(line)
+            try {
+                messageProcessor.process(line)
+            }catch(ex : Exception){
+                logger.warn("Exception in message parsing catched to keep listen thread alive")
+                logger.warn("Exception: $ex")
+                ex.printStackTrace()
+            }
         }
         logger.info("Got null line from reader")
         shutdown()
