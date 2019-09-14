@@ -36,11 +36,35 @@ open class MessageProcessor{
         val messageType = message.getString("type")
         when(messageType){
             "GameStart" -> processGameStartMessage(message)
+            "Bling" -> processBlindMessage(message)
             else -> {
                 logger.warn("Invalid command received: '$messageType', ignoring message")
             }
         }
 
+    }
+
+    private fun processBlindMessage(message : JSONObject){
+        if(!messageSanityCheck(message,listOf("bigBlindPlayer","smallBlindPlayer"))){return}
+
+        val smallBlind_str = message.getString("smallBlindPlayer")
+        val bigBlind_str = message.getString("bigBlindPlayer")
+
+        val smallBlind = try{
+            smallBlind_str.toInt()
+        }catch(ex : Exception){
+            logger.warn("Cannot parse parameter 'smallBlindPlayer'")
+            return
+        }
+        val bigBlind = try{
+            bigBlind_str.toInt()
+        }catch(ex : Exception){
+            logger.warn("Cannot parse parameter 'bigBlindPlayer'")
+            return
+        }
+
+        logger.debug("Calling API onSubgameStart with ($bigBlind,$smallBlind)")
+        api.onBlindClaim?.let{it(bigBlind,smallBlind)}
     }
 
     private fun processGameStartMessage(message : JSONObject){
