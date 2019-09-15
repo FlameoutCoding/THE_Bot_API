@@ -15,4 +15,6 @@ open class BotAPI(){
     var onSubgameStart : ((Int) -> Unit)? = null
     //Note: onBlindClaim(bigBlindPlayer,smallBlindPlayer)
     var onBlindClaim : ((Int,Int) -> Unit)? = null
+    //first parameter: Current amout set, second parameter: amount to call
+    var onMyActionRequired : ((Int,Int) -> Unit)? = null
 }

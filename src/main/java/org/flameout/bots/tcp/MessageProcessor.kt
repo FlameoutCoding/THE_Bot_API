@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component
 import java.util.stream.Collectors
 
 @Component
-open class MessageProcessor{
+open class MessageProcessor(){
     private val logger = LoggerFactory.getLogger("MessageProcessor")
 
     //This... thing actually works
@@ -20,7 +20,7 @@ open class MessageProcessor{
         return BotAPI()
     }
 
-    fun process(message : String){
+    fun process(message : String,mySlot : Int){
         val message = try{
             JSONObject(message)
         }catch(ex : Exception){
@@ -36,12 +36,49 @@ open class MessageProcessor{
         val messageType = message.getString("type")
         when(messageType){
             "GameStart" -> processGameStartMessage(message)
-            "Bling" -> processBlindMessage(message)
+            "Blind" -> processBlindMessage(message)
+            "ActionRequest" -> processActionRequest(message,mySlot)
             else -> {
                 logger.warn("Invalid command received: '$messageType', ignoring message")
             }
         }
 
+    }
+
+    private fun processActionRequest(message : JSONObject,mySlot : Int){
+        if(!messageSanityCheck(message,listOf("activePlayer","currentBet","highestBet"))){return}
+
+        val activePlayer_str = message.getString("activePlayer")
+        val currentAmt_str = message.getString("currentBet")
+        val highestAmt_str = message.getString("highestBet")
+
+        val activePlayer = try{
+            activePlayer_str.toInt()
+        }catch(ex : Exception){
+            logger.warn("Cannot parse parameter 'activePlayer'")
+            return
+        }
+
+        if(activePlayer != mySlot){
+            logger.debug("Ignoring action request, my slot: $mySlot, requested slot: $activePlayer")
+            return
+        }
+
+        val currentAmt = try{
+            currentAmt_str.toInt()
+        }catch(ex : Exception){
+            logger.warn("Cannot parse parameter 'currentBet'")
+            return
+        }
+
+        val highestAmt = try{
+            highestAmt_str.toInt()
+        }catch(ex : Exception){
+            logger.warn("Cannot parse parameter 'highestBet'")
+            return
+        }
+
+        api.onMyActionRequired?.let{it(currentAmt,highestAmt)}
     }
 
     private fun processBlindMessage(message : JSONObject){

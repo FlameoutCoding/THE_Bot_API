@@ -62,7 +62,7 @@ open class TCPChannel(){
             val line = reader.readLine() ?: break
             logger.debug("Incoming message: $line")
             try {
-                messageProcessor.process(line)
+                messageProcessor.process(line,MY_GAME_SLOT)
             }catch(ex : Exception){
                 logger.warn("Exception in message parsing catched to keep listen thread alive")
                 logger.warn("Exception: $ex")
