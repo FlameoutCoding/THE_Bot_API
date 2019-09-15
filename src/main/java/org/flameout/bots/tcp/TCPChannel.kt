@@ -4,6 +4,7 @@ import org.flameout.bots.APIConfiguration
 import org.json.JSONObject
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.context.annotation.Bean
 import org.springframework.stereotype.Component
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -26,7 +27,10 @@ open class TCPChannel(){
     @Autowired
     private lateinit var messageProcessor : MessageProcessor
 
-
+    @Bean
+    private fun generateSenderWrapper() : BotApiSender{
+        return BotApiSender(this::send)
+    }
 
     @PostConstruct
     private fun setup(){
