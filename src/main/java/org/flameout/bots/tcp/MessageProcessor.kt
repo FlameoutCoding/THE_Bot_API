@@ -13,12 +13,7 @@ open class MessageProcessor(){
 
     //This... thing actually works
     @Autowired
-    private lateinit var api : BotAPI
-
-    @Bean
-    private fun generateAPI() : BotAPI{
-        return BotAPI()
-    }
+    private lateinit var api : BotInboundAPI
 
     fun process(message : String,mySlot : Int){
         val message = try{
@@ -38,11 +33,21 @@ open class MessageProcessor(){
             "GameStart" -> processGameStartMessage(message)
             "Blind" -> processBlindMessage(message)
             "ActionRequest" -> processActionRequest(message,mySlot)
+            "OpenMyCards" -> processMyCards(message)
             else -> {
                 logger.warn("Invalid command received: '$messageType', ignoring message")
             }
         }
 
+    }
+
+    private fun processMyCards(message : JSONObject){
+        if(!messageSanityCheck(message,listOf("my.card0","my.card1"))){return}
+
+        val card1 = message.getString("my.card0").toInt()
+        val card2 = message.getString("my.card1").toInt()
+
+        api.onMyPrivateCards?.let{it(card1,card2)}
     }
 
     private fun processActionRequest(message : JSONObject,mySlot : Int){

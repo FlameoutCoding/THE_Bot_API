@@ -28,8 +28,8 @@ open class TCPChannel(){
     private lateinit var messageProcessor : MessageProcessor
 
     @Bean
-    private fun generateSenderWrapper() : BotApiSender{
-        return BotApiSender(this::send)
+    private fun generateOutboundAPI() : BotOutboundAPI{
+        return BotOutboundAPI(this::send)
     }
 
     @PostConstruct
