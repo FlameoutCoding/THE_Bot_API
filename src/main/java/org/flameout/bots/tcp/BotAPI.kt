@@ -17,4 +17,5 @@ open class BotInboundAPI(){
     //first parameter: Current amout set, second parameter: amount to call
     var onMyActionRequired : ((Int,Int) -> Unit)? = null
     var onMyPrivateCards : ((Int,Int) -> Unit)? = null
+    var onSubgameResult : ((Map<Int,Float>) -> Unit)? = null
 }

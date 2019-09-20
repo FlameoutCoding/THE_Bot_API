@@ -1,5 +1,6 @@
 package org.flameout.bots.tcp
 
+import org.json.JSONException
 import org.json.JSONObject
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -34,11 +35,26 @@ open class MessageProcessor(){
             "Blind" -> processBlindMessage(message)
             "ActionRequest" -> processActionRequest(message,mySlot)
             "OpenMyCards" -> processMyCards(message)
+            "GameResult" -> processGameResult(message)
             else -> {
                 logger.warn("Invalid command received: '$messageType', ignoring message")
             }
         }
 
+    }
+
+    private fun processGameResult(message : JSONObject){
+        val subgameResultMap = HashMap<Int,Float>()
+
+        try{
+            for(i in 0 until 10){
+                val amtStr = message.getString("player$i.gameResult")
+                subgameResultMap[i] = amtStr.toFloat()
+            }
+        }catch(ex : JSONException){
+
+        }
+        api.onSubgameResult?.let{it(subgameResultMap)}
     }
 
     private fun processMyCards(message : JSONObject){
